@@ -4,22 +4,9 @@ import mediapipe as mp
 import numpy as np
 
 def calculate_distance(point1, point2):
-    """
-    Calculate the Euclidean distance between two 3D points.
-    """
     return np.sqrt((point1.x - point2.x)**2 + (point1.y - point2.y)**2 + (point1.z - point2.z)**2)
 
 def determine_vowel_or_j(palm_marks, index_hand_marks):
-    """
-    Determine which vowel or 'J' is being signed based on the index finger's proximity to other fingers.
-
-    Args:
-        index_finger_landmark: The landmark of the index finger.
-        other_finger_landmarks: A list of landmarks for [thumb, index, middle, ring, pinky].
-
-    Returns:
-        str: The corresponding letter ('A', 'E', 'I/J', 'O', or 'U').
-    """
     index_point = index_hand_marks[8]
     other_finger_landmarks = [
         palm_marks[4],
@@ -62,11 +49,6 @@ def determine_LTR(palm_marks, index_finger_hand):
     else:
         return 'L'
 def determine_KX(hand_1, hand_2):
-    """
-    For it to be K:
-    Hand_1 point 6x is less than hand_2 point 6x which is less than hand_2 point 8x.
-    or the complete opposite is true so hand_1 point6x is > hand_2 point 6x > hand_2 point 8x.
-    """
     if hand_1[5].y > hand_2[6].x:
         return 'K'
     else:
