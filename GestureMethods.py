@@ -61,6 +61,16 @@ def determine_LTR(palm_marks, index_finger_hand):
             return 'R'
     else:
         return 'L'
+def determine_KX(hand_1, hand_2):
+    """
+    For it to be K:
+    Hand_1 point 6x is less than hand_2 point 6x which is less than hand_2 point 8x.
+    or the complete opposite is true so hand_1 point6x is > hand_2 point 6x > hand_2 point 8x.
+    """
+    if hand_1[5].y > hand_2[6].x:
+        return 'K'
+    else:
+        return 'X'
 
 def add_sign(detected_letters, item):
     i = 0
@@ -73,7 +83,7 @@ def add_sign(detected_letters, item):
         if time.time() - current_letter[1] < 1:
             return detected_letters
     if item == 'H1' and current_letter[0] == 'H' and time.time() - current_letter[1] < 2:
-        return
+        return detected_letters
     if item == 'E': # if the sign is a j it may accidentally trigger, so don't register the sign unless its been longer than 2 seconds since last sign.
         current_letter = calculate_current_letter(detected_letters)
         if time.time() - current_letter[1] < 2 and current_letter[0] == 'I':
@@ -81,7 +91,7 @@ def add_sign(detected_letters, item):
 
     while i < len(detected_letters):
         if detected_letters[i][2]:
-            if detected_letters[i][0] == item and time.time() - detected_letters[i][1] >= 2:
+            if detected_letters[i][0] == item and time.time() - detected_letters[i][1] <= 2:
                 return detected_letters
             elif detected_letters[i][0] == '':
                 detected_letters[i][0] = item
@@ -107,18 +117,16 @@ def calculate_current_letter(detected_letters):
     current_letter = None
     previous_letter = None
 
+    if detected_letters is None:
+        return ''
+
     while i < len(detected_letters):
         if detected_letters[i][2]:
             current_letter = detected_letters[i]
             previous_letter = detected_letters[i-1]
             break
         i += 1
-    if current_letter[0] == 'I':
-        if time.time() - current_letter[1] > 2:
-            return current_letter
-        else:
-            return previous_letter
-    elif current_letter[0] == 'H1':
+    if current_letter[0] == 'H1':
         return current_letter
     elif current_letter[0] == 'A':
         if current_letter[1] - previous_letter[1] < 2 and previous_letter[0] == 'I':
@@ -143,7 +151,6 @@ def process_points(detected_letters, actual_signs):
     if len(actual_signs.gestures) == 1 and len(actual_signs.hand_landmarks) == 2:
         detected_signs.append('')
         detected_landmarks.append(actual_signs.hand_landmarks[1])
-    print(detected_signs)
     sign_hierarchy_mapping = {
         ('Circle-Hand', 'Circle-Hand') : 'B',
         ('Circle-Hand', 'Palm-Down') : 'B',
@@ -151,23 +158,27 @@ def process_points(detected_letters, actual_signs):
         ('Two-Fingers',) : 'F',
         ('Scrunched-Hand', 'Scrunched-Hand') : 'G',
         ('Palm-Down',) : 'H1',
-        ('Pointy-Finger',) : 'K',
         ('Palm-Side', 'Three-Fingers') : 'M',
         ('Palm-Side', 'Two-Fingers') : 'N',
         ('Hook-Finger',) : 'Q',
+        ('F-Cut-Off',) : 'Q',
         ('S-Hands',) : 'S',
         ('Palm-Side', 'V-Fingers') : 'V',
+        ('Palm-Up', 'V-Fingers') : 'V',
         ('W-Hands',) : 'W',
+        ('V-Fingers',) : 'V',
         ('Y-Finger',) : 'Y',
         ('Palm-Side-Up', 'Z-Hand') : 'Z',
         ('Palm-Up', '$') : 'VOWEL/J',
+        ('Pointy-Finger', '$') : 'KX',
         ('Half-Circle', '$') : 'D',
         ('Two-Fingers', '$') : 'F',
         ('F-Cut-Off', '$') : 'F',
-        ('Palm-Side', '$') : 'LTR',
-        ('Circle-Hand', '$'): 'P',
         ('S-Hands', '$') : 'S',
-        ('Pointy-Finger', '$'): 'X'
+        ('Palm-Side', '$') : 'LTR',
+        ('Circle-Hand', '$') : 'P',
+        ('V-Fingers', '$') : 'V',
+        ('Y-Finger', '$') : 'Y'
     }
     signed_letter = ['', None]
     if len(detected_signs) == 2:
@@ -197,7 +208,7 @@ def process_points(detected_letters, actual_signs):
                     signed_letter[1] = comb2_landmarks
                     break
 
-    hierarchies = ['VOWEL/J', 'LTR', 'W']
+    hierarchies = ['VOWEL/J', 'LTR', 'W', 'KX']
     if signed_letter[0] not in hierarchies:
         detected_letters = add_sign(detected_letters, signed_letter[0])
     else:
@@ -207,13 +218,17 @@ def process_points(detected_letters, actual_signs):
                 detected_letters = add_sign(detected_letters, determine_vowel_or_j(palm_marks, finger_marks))
             elif signed_letter[0] == 'LTR':
                 detected_letters = add_sign(detected_letters, determine_LTR(palm_marks, finger_marks))
+            elif signed_letter[0] == 'KX':
+                print("RUNNING")
+                detected_letters = add_sign(detected_letters, determine_KX(palm_marks, finger_marks))
 
-        if signed_letter[0] == 'W':
+        elif 'W-Hands' in comb1_gestures or 'Palm-Side' in comb1_gestures:
             current_letter = calculate_current_letter(detected_letters)
-            if current_letter[0] == 'H1' and time.time() - current_letter[1] < 2:
-                detected_letters = add_sign(detected_letters, 'H')
-            else:
-                detected_letters = add_sign(detected_letters, signed_letter[0])
+            if current_letter != '':
+                if current_letter[0] == 'H1' and time.time() - current_letter[1] < 2:
+                    detected_letters = add_sign(detected_letters, 'H')
+                else:
+                    detected_letters = add_sign(detected_letters, signed_letter[0])
     return detected_letters
 
 def display_hand_landmarks(drawn_points, frame):
@@ -237,7 +252,9 @@ def instantiate_detected_letters_buffer():
 
 def current_displayed_letter(detected_letters):
     current_letter_list = calculate_current_letter(detected_letters)
-    if time.time() - current_letter_list[1] > 5 or current_letter_list[0] == 'H1':
+    if current_letter_list == '':
+        current_letter = ''
+    elif time.time() - current_letter_list[1] > 5 or current_letter_list[0] == 'H1':
         current_letter = ''
     else:
         current_letter = current_letter_list[0]

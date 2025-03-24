@@ -8,9 +8,9 @@ def display_livefeed():
     gesture_point_getter = mp.solutions.hands.Hands(static_image_mode=False, max_num_hands=2, min_detection_confidence=0.5)
     # Start capturing video from the webcam
     cap = cv2.VideoCapture(0)
+    start_time = time.time()
     while cap.isOpened():
         ret, frame = cap.read()
-        temp_frame = copy.deepcopy(frame)
         if not ret:
             break
 
@@ -36,14 +36,18 @@ def display_livefeed():
                     cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 255), 3)
         # Show the video feed
         cv2.imshow('Live Feed', frame)
-
-        # Exit if 'q' is pressed
+        if current_letter == 'K':
+            print(time.time() - start_time)
+            time.sleep(1)
+        if cv2.waitKey(1) & 0xFF == ord('k'):
+            start_time = time.time()
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-
     # Release resources
     cap.release()
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
     display_livefeed()
+
+

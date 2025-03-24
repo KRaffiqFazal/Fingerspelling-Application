@@ -17,7 +17,7 @@ def process_image(image_path):
 
     gesture_recogniser = create_gesture_recogniser()
     gesture_point_getter = mp.solutions.hands.Hands(static_image_mode=True, max_num_hands=2,
-                                                    min_detection_confidence=0.5)
+                                                    min_detection_confidence=0.3)
 
     # Convert the frame to an mp.Image object
     mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
