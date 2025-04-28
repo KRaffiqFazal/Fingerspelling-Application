@@ -16,4 +16,4 @@ This is a final-year Applied Computer Science BSc project that uses MediaPipe ha
    ```
 
 ## Usage
-Letters can be classified from a live camera feed with [this](Live-Feed-Recognition.py) or as static images with [this](Image-Recognition.py). Both are proof of concept examples that rely upon logic present [here](GestureMethods.py).
+Letters can be classified from a live camera feed with [this](Live-Feed-Recognition.py). This serves as a proof of concept example that relies on logic present [here](GestureMethods.py).
